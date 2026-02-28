@@ -7,7 +7,6 @@
     <style>
         body { font-family: Arial; text-align: center; background: #0a0a0a; color: #0f0; margin: 0; padding: 20px; }
         h1 { color: yellow; }
-        .container { max-width: 1200px; margin: 0 auto; }
         .games-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 25px; margin: 30px 0; }
         .game-card { background: #111; padding: 15px; border: 2px solid #0f0; border-radius: 10px; box-shadow: 0 0 15px rgba(0,255,0,0.25); transition: all 0.2s; cursor: pointer; }
         .game-card:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(0,255,0,0.5); }
@@ -91,7 +90,6 @@
                 return;
             }
 
-            // Direct .gba file from subfolder
             const romUrl = '/brayh777/roms/pokemon-light-platinum.gba';
 
             window.EJS_player = '#emulator';
@@ -101,7 +99,6 @@
             window.EJS_gameName = gameName;
             window.EJS_startOnLoad = true;
 
-            // Pass Blob URLs for cores
             window.EJS_mgbaLegacyData = coreDataUrl;
             window.EJS_mgbaLegacyJs = coreJsUrl;
             window.EJS_mgbaLegacyWasm = coreWasmUrl;
