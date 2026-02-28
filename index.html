@@ -53,7 +53,7 @@
             return;
         }
 
-        const romUrl = romPath; // direct path
+        const romUrl = romPath;
 
         window.EJS_player = '#emulator';
         window.EJS_core = core;
@@ -62,10 +62,10 @@
         window.EJS_gameName = gameName;
         window.EJS_startOnLoad = true;
 
-        // Force use of our preloaded Blobs (bypass broken report/fetch)
-        window.EJS_coreUrl = coreJsUrl; // direct JS Blob for core logic
-        window.EJS_coreWasmUrl = coreWasmUrl; // WASM Blob
-        window.EJS_coreDataUrl = coreDataUrl; // Data Blob
+        // Inject Blobs
+        window.EJS_mgbaLegacyData = coreDataUrl;
+        window.EJS_mgbaLegacyJs = coreJsUrl;
+        window.EJS_mgbaLegacyWasm = coreWasmUrl;
 
         console.log('Starting emulator with ROM:', romUrl);
 
@@ -74,14 +74,15 @@
         s.onload = () => {
             console.log('Loader loaded – waiting for core registration');
             setTimeout(() => {
+                console.log('Final EJS_emulator check:', window.EJS_emulator);
                 if (window.EJS_emulator && typeof window.EJS_emulator.start === 'function') {
                     window.EJS_emulator.start();
-                    console.log('Game start called successfully');
+                    console.log('Game start called successfully - game should boot now');
                 } else {
                     console.error('EJS_emulator.start not available after delay');
                     emu.innerHTML += '<p style="color:red;">Core registration failed - check console</p>';
                 }
-            }, 12000); // 12-second delay
+            }, 15000); // 15-second delay
         };
         s.onerror = () => emu.innerHTML = '<p style="color:red;">Loader failed</p>';
         document.body.appendChild(s);
