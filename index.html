@@ -23,7 +23,7 @@
     <div id="hub">
         <h1>Pokémon Game Hub</h1>
         <div class="games-grid">
-            <div class="game-card" onclick="loadGame('mgba-legacy-wasm', 'roms/pokemon-light-platinum.gba', 'Pokémon Light Platinum (GBA)')">
+            <div class="game-card" onclick="loadGame('mgba-legacy-wasm', '/brayh777/roms/pokemon-light-platinum.gba', 'Pokémon Light Platinum (GBA)')">
                 <img src="https://archives.bulbagarden.net/media/upload/7/7e/Light_Platinum_cover.jpg" alt="Light Platinum">
                 <h3>Pokémon Light Platinum (GBA)</h3>
             </div>
@@ -44,9 +44,9 @@
 
         async function preloadCores() {
             const files = [
-                { key: 'data', path: '/data/cores/mgba-legacy-wasm-data.txt' },
-                { key: 'js', path: '/data/cores/mgba-legacy-wasm-js.txt' },
-                { key: 'wasm', path: '/data/cores/mgba-legacy-wasm-wasm.txt' }
+                { key: 'data', path: '/brayh777/data/cores/mgba-legacy-wasm-data.txt' },
+                { key: 'js', path: '/brayh777/data/cores/mgba-legacy-wasm-js.txt' },
+                { key: 'wasm', path: '/brayh777/data/cores/mgba-legacy-wasm-wasm.txt' }
             ];
 
             for (const file of files) {
@@ -91,12 +91,12 @@
                 return;
             }
 
-            // Direct .gba file - no base64 decode needed
-            const romUrl = romPath; // GitHub serves it directly
+            // Direct .gba file from subfolder
+            const romUrl = '/brayh777/roms/pokemon-light-platinum.gba';
 
             window.EJS_player = '#emulator';
             window.EJS_core = core;
-            window.EJS_pathtodata = '/data/';
+            window.EJS_pathtodata = '/brayh777/data/';
             window.EJS_gameUrl = romUrl;
             window.EJS_gameName = gameName;
             window.EJS_startOnLoad = true;
@@ -109,7 +109,7 @@
             console.log('Starting emulator with ROM:', romUrl);
 
             const s = document.createElement('script');
-            s.src = '/data/loader.js';
+            s.src = '/brayh777/data/loader.js';
             s.onload = () => console.log('Emulator loaded');
             s.onerror = () => emu.innerHTML = '<p style="color:red;">Loader failed</p>';
             document.body.appendChild(s);
