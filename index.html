@@ -7,6 +7,7 @@
     <style>
         body { font-family: Arial; text-align: center; background: #0a0a0a; color: #0f0; margin: 0; padding: 20px; }
         h1 { color: yellow; }
+        .container { max-width: 1200px; margin: 0 auto; }
         .games-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 25px; margin: 30px 0; }
         .game-card { background: #111; padding: 15px; border: 2px solid #0f0; border-radius: 10px; box-shadow: 0 0 15px rgba(0,255,0,0.25); transition: all 0.2s; cursor: pointer; }
         .game-card:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(0,255,0,0.5); }
@@ -90,7 +91,7 @@
                 return;
             }
 
-            const romUrl = '/brayh777/roms/pokemon-light-platinum.gba';
+            const romUrl = romPath; // direct path
 
             window.EJS_player = '#emulator';
             window.EJS_core = core;
@@ -107,7 +108,37 @@
 
             const s = document.createElement('script');
             s.src = '/brayh777/data/loader.js';
-            s.onload = () => console.log('Emulator loaded');
+            s.onload = () => {
+                console.log('Loader loaded – forcing core JS registration');
+                if (coreJsUrl) {
+                    fetch(coreJsUrl)
+                        .then(res => res.text())
+                        .then(coreJsCode => {
+                            console.log('Core JS text fetched, length: ' + coreJsCode.length);
+                            console.log('Core JS first 100 chars: ' + coreJsCode.substring(0, 100));
+                            try {
+                                eval(coreJsCode);
+                                console.log('Core JS eval executed successfully');
+                                setTimeout(() => {
+                                    console.log('Final EJS_emulator check:', window.EJS_emulator);
+                                    if (window.EJS_emulator && typeof window.EJS_emulator.start === 'function') {
+                                        window.EJS_emulator.start();
+                                        console.log('Game start called successfully - game should boot now');
+                                    } else {
+                                        console.error('Core registration failed after eval');
+                                        emu.innerHTML += '<p style="color:red;">Core failed to register - check console</p>';
+                                    }
+                                }, 10000);
+                            } catch (e) {
+                                console.error('Eval failed:', e);
+                                emu.innerHTML += '<p style="color:red;">Core eval failed</p>';
+                            }
+                        })
+                        .catch(err => console.error('Core JS fetch failed:', err));
+                } else {
+                    console.error('No core JS Blob URL');
+                }
+            };
             s.onerror = () => emu.innerHTML = '<p style="color:red;">Loader failed</p>';
             document.body.appendChild(s);
         }
