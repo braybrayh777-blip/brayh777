@@ -9,7 +9,6 @@
         "socket.io.min.js"
         // Removed "compression.js" - we don't need it (cores are pre-decoded)
     ];
-
     const folderPath = (path) => path.substring(0, path.length - path.split("/").pop().length);
     let scriptPath = (typeof window.EJS_pathtodata === "string") ? window.EJS_pathtodata : folderPath((new URL(document.currentScript.src)).pathname);
     if (!scriptPath.endsWith("/")) scriptPath += "/";
@@ -87,7 +86,7 @@
     config.dontExtractBIOS = window.EJS_dontExtractBIOS;
     config.disableDatabases = window.EJS_disableDatabases;
     config.disableLocalStorage = window.EJS_disableLocalStorage;
-    config.forceLegacyCores = window.EJS_forceLegacyCores;
+    config.forceLegacyCores = true;  // Added: force legacy mode for your blobs
     config.noAutoFocus = window.EJS_noAutoFocus;
     config.videoRotation = window.EJS_videoRotation;
     config.hideSettings = window.EJS_hideSettings;
@@ -95,23 +94,36 @@
 
     // Force use of your pre-decoded Blobs (bypass all fetches)
     if (window.EJS_mgbaLegacyData) config.coreData = window.EJS_mgbaLegacyData;
-    if (window.EJS_mgbaLegacyJs) config.coreJs = window.EJS_mgbaLegacyJs;
+    if (window.EJS_mgbaLegacyJs)   config.coreJs   = window.EJS_mgbaLegacyJs;
     if (window.EJS_mgbaLegacyWasm) config.coreWasm = window.EJS_mgbaLegacyWasm;
 
     // Disable broken report fetch
     config.disableCoreReports = true;
 
-    window.EJS_emulator = new EmulatorJS(EJS_player, config);
+    try {
+        window.EJS_emulator = new EmulatorJS(EJS_player, config);
+        console.log('EmulatorJS instantiated successfully');
+        console.log('EJS_emulator keys:', Object.keys(window.EJS_emulator || {}));
+        console.log('Has start after creation?:', typeof window.EJS_emulator?.start === 'function');
+    } catch (err) {
+        console.error('EmulatorJS instantiation failed:', err);
+    }
 
-    // Force start after a short delay (bypasses library bug)
-    setTimeout(() => {
+    // Polling for start (better than fixed timeout)
+    let startPoll = setInterval(() => {
         if (window.EJS_emulator && typeof window.EJS_emulator.start === 'function') {
             window.EJS_emulator.start();
             console.log('Game forced to start successfully');
+            clearInterval(startPoll);
         } else {
-            console.warn('Start method not available yet');
+            console.warn('Start method not available yet - polling');
         }
-    }, 8000);
+    }, 1000);
+
+    setTimeout(() => {
+        clearInterval(startPoll);
+        console.error('Start polling timed out after 30s');
+    }, 30000);
 
     // Optional event listeners
     if (typeof window.EJS_ready === "function") {
