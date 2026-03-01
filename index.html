@@ -17,13 +17,14 @@
         #emulator { width: 100%; height: 80vh; border: 4px solid #0f0; background: #000; }
         .back-btn { padding: 12px 30px; background: #0f0; color: #000; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; }
         .back-btn:hover { background: #ffff00; }
+        #status { color: #ff0; font-size: 1.2em; margin: 10px; text-align: center; }
     </style>
 </head>
 <body>
     <div id="hub">
         <h1>Pokémon Game Hub</h1>
         <div class="games-grid">
-            <div class="game-card" onclick="loadGame('mgba-legacy-wasm', '/brayh777/roms/pokemon-light-platinum.gba', 'Pokémon Light Platinum (GBA)')">
+            <div class="game-card" onclick="loadGame('mgba', '/brayh777/roms/pokemon-light-platinum.gba', 'Pokémon Light Platinum (GBA)')">
                 <img src="https://archives.bulbagarden.net/media/upload/7/7e/Light_Platinum_cover.jpg" alt="Light Platinum">
                 <h3>Pokémon Light Platinum (GBA)</h3>
             </div>
@@ -33,6 +34,7 @@
     <div id="game-container">
         <button onclick="closeGame()" class="back-btn">← Back</button>
         <div id="emulator"></div>
+        <div id="status">Loading emulator...</div>
         <button onclick="closeGame()" class="back-btn">← Back</button>
     </div>
 
@@ -83,10 +85,11 @@
             document.getElementById('game-container').style.display = 'block';
 
             const emu = document.getElementById('emulator');
-            emu.innerHTML = '<p style="color:#0f0;">Loading ROM... (may take 30–90 seconds)</p>';
+            const status = document.getElementById('status');
+            status.innerHTML = 'Loading ROM...';
 
             if (!coresReady) {
-                emu.innerHTML += '<p style="color:#ff0;">Waiting for cores...</p>';
+                status.innerHTML = 'Waiting for cores...';
                 setTimeout(() => loadGame(core, romPath, gameName), 2000);
                 return;
             }
@@ -98,52 +101,43 @@
             window.EJS_pathtodata = '/brayh777/data/';
             window.EJS_gameUrl = romUrl;
             window.EJS_gameName = gameName;
-            window.EJS_startOnLoaded = true;
+            window.EJS_startOnLoad = true;
 
-            window.EJS_mgbaLegacyData = coreDataUrl;
-            window.EJS_mgbaLegacyJs = coreJsUrl;
-            window.EJS_mgbaLegacyWasm = coreWasmUrl;
+            window.EJS_mgbaData = coreDataUrl;
+            window.EJS_mgbaJs = coreJsUrl;
+            window.EJS_mgbaWasm = coreWasmUrl;
 
             console.log('Starting emulator with ROM:', romUrl);
 
             const s = document.createElement('script');
             s.src = '/brayh777/data/loader.js';
             s.onload = () => {
-                console.log('Loader loaded – forcing core JS registration');
-                if (coreJsUrl) {
-                    fetch(coreJsUrl)
-                        .then(res => res.text())
-                        .then(coreJsCode => {
-                            console.log('Core JS text fetched, length: ' + coreJsCode.length);
-                            console.log('Core JS first 100 chars: ' + coreJsCode.substring(0, 100));
-                            try {
-                                eval(coreJsCode);
-                                console.log('Core JS eval executed successfully');
-                            } catch (e) {
-                                console.error('Eval failed:', e);
-                            }
+                console.log('Loader loaded – forcing core registration');
+                status.innerHTML = 'Loader loaded - initializing core...';
 
-                            // Aggressive retry for start
-                            let attempts = 0;
-                            const interval = setInterval(() => {
-                                attempts++;
-                                console.log(`Start attempt ${attempts}`);
-                                if (window.EJS_emulator && typeof window.EJS_emulator.start === 'function') {
-                                    window.EJS_emulator.start();
-                                    console.log('Game start called successfully');
-                                    clearInterval(interval);
-                                } else if (attempts >= 20) {
-                                    console.error('Start failed after 40 seconds');
-                                    clearInterval(interval);
-                                }
-                            }, 2000);
-                        })
-                        .catch(err => console.error('Core JS fetch failed:', err));
-                } else {
-                    console.error('No core JS Blob URL');
-                }
+                // Aggressive retry loop for .start()
+                let attempts = 0;
+                const interval = setInterval(() => {
+                    attempts++;
+                    console.log(`Start attempt ${attempts}`);
+                    status.innerHTML = `Attempt ${attempts} to start emulator...`;
+
+                    if (window.EJS_emulator && typeof window.EJS_emulator.start === 'function') {
+                        window.EJS_emulator.start();
+                        console.log('Game start called successfully');
+                        status.innerHTML = 'Game starting... (wait 30–60 seconds for first boot)';
+                        clearInterval(interval);
+                    } else if (attempts >= 20) {
+                        console.error('Start failed after 40 seconds');
+                        status.innerHTML = 'Start failed - check console for details';
+                        clearInterval(interval);
+                    }
+                }, 2000); // Check every 2 seconds, up to 40 seconds
             };
-            s.onerror = () => emu.innerHTML = '<p style="color:red;">Loader failed</p>';
+            s.onerror = () => {
+                console.error('Loader failed');
+                status.innerHTML = 'Loader failed';
+            };
             document.body.appendChild(s);
         }
 
