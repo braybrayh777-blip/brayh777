@@ -24,7 +24,7 @@
     <div id="hub">
         <h1>Pokémon Game Hub</h1>
         <div class="games-grid">
-            <div class="game-card" onclick="loadGame('mgba', '/brayh777/roms/pokemon-light-platinum.gba', 'Pokémon Light Platinum (GBA)')"
+            <div class="game-card" onclick="loadGame('mgba', '/brayh777/roms/pokemon-light-platinum.gba', 'Pokémon Light Platinum (GBA)')">
                 <img src="https://archives.bulbagarden.net/media/upload/7/7e/Light_Platinum_cover.jpg" alt="Light Platinum">
                 <h3>Pokémon Light Platinum (GBA)</h3>
             </div>
@@ -37,129 +37,114 @@
         <div id="status">Loading emulator...</div>
         <button onclick="closeGame()" class="back-btn">← Back</button>
     </div>
-  <script>
-  let coresReady = false;
-let coreDataUrl = null;
-let coreJsUrl = null;
-let coreWasmUrl = null;
 
-async function preloadCores() {
-    const files = [
-        { key: 'data', path: '/brayh777/data/cores/mgba-legacy-wasm-data.txt' },
-        { key: 'js', path: '/brayh777/data/cores/mgba-legacy-wasm-js.txt' },
-        { key: 'wasm', path: '/brayh777/data/cores/mgba-legacy-wasm-wasm.txt' }
-    ];
+    <script>
+        let coresReady = false;
+        let coreDataUrl = null;
+        let coreJsUrl = null;
+        let coreWasmUrl = null;
 
-    for (const file of files) {
-        try {
-            const res = await fetch(file.path);
-            if (!res.ok) {
-                console.error(`Failed to fetch ${file.path}: ${res.status} ${res.statusText}`);
-                continue;
-            }
-            const base64 = await res.text();
-            const binary = atob(base64);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            const blob = new Blob([bytes], { type: 'application/octet-stream' });
-            const url = URL.createObjectURL(blob);
+        async function preloadCores() {
+            const files = [
+                { key: 'data', path: '/brayh777/data/cores/mgba-legacy-wasm-data.txt' },
+                { key: 'js', path: '/brayh777/data/cores/mgba-legacy-wasm-js.txt' },
+                { key: 'wasm', path: '/brayh777/data/cores/mgba-legacy-wasm-wasm.txt' }
+            ];
 
-            if (file.key === 'data') coreDataUrl = url;
-            if (file.key === 'js') coreJsUrl = url;
-            if (file.key === 'wasm') coreWasmUrl = url;
+            for (const file of files) {
+                try {
+                    const res = await fetch(file.path);
+                    if (!res.ok) {
+                        console.error(`Failed to fetch ${file.path}: ${res.status} ${res.statusText}`);
+                        continue;
+                    }
+                    const base64 = await res.text();
+                    const binary = atob(base64);
+                    const bytes = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                    const blob = new Blob([bytes], { type: 'application/octet-stream' });
+                    const url = URL.createObjectURL(blob);
 
-            console.log(`Core ${file.key} decoded OK`);
-        } catch (e) {
-            console.error(`Core preload failed for ${file.path}`, e);
-        }
-    }
-    coresReady = true;
-    console.log('Cores preloaded');
-}
+                    if (file.key === 'data') coreDataUrl = url;
+                    if (file.key === 'js') coreJsUrl = url;
+                    if (file.key === 'wasm') coreWasmUrl = url;
 
-preloadCores();
-
-function loadGame(core, romPath, gameName) {
-    document.getElementById('hub').style.display = 'none';
-    document.getElementById('game-container').style.display = 'block';
-
-    const emu = document.getElementById('emulator');
-    emu.innerHTML = '<p style="color:#0f0;">Loading ROM... (may take 30–90 seconds)</p>';
-
-    if (!coresReady) {
-        emu.innerHTML += '<p style="color:#ff0;">Waiting for cores...</p>';
-        setTimeout(() => loadGame(core, romPath, gameName), 2000);
-        return;
-    }
-
-    const romUrl = romPath;
-
-    window.EJS_player = '#emulator';
-    window.EJS_core = core;
-    window.EJS_pathtodata = '/brayh777/data/';
-    window.EJS_gameUrl = romUrl;
-    window.EJS_gameName = gameName;
-    window.EJS_startOnLoad = true;
-
-    window.EJS_mgbaData = coreDataUrl;
-    window.EJS_mgbaJs = coreJsUrl;
-    window.EJS_mgbaWasm = coreWasmUrl;
-
-    console.log('Starting emulator with ROM:', romUrl);
-
-    const s = document.createElement('script');
-    s.src = '/brayh777/data/loader.js';
-    s.onload = () => {
-        console.log('Loader loaded – forcing core registration');
-
-        // OVERRIDE: Replace the broken downloadGameCore
-        if (window.EmulatorJS && window.EmulatorJS.prototype && window.EmulatorJS.prototype.downloadGameCore) {
-            const originalDownload = window.EmulatorJS.prototype.downloadGameCore;
-            window.EmulatorJS.prototype.downloadGameCore = function () {
-                console.log('Overriding downloadGameCore - using injected Blobs');
-
-                // Use pre-injected Blobs
-                if (window.EJS_mgbaData) this.coreData = window.EJS_mgbaData;
-                if (window.EJS_mgbaJs) this.coreJs = window.EJS_mgbaJs;
-                if (window.EJS_mgbaWasm) this.coreWasm = window.EJS_mgbaWasm;
-
-                // Skip report JSON
-                this.coreReport = null;
-
-                // Force immediate start
-                if (typeof this.start === 'function') {
-                    this.start();
-                    console.log('Forced core start after Blob override');
-                } else {
-                    console.warn('Start method not available even after override');
+                    console.log(`Core ${file.key} decoded OK`);
+                } catch (e) {
+                    console.error(`Core preload failed for ${file.path}`, e);
                 }
-            };
+            }
+            coresReady = true;
+            console.log('Cores preloaded');
         }
 
-        // Retry loop as backup
-        let attempts = 0;
-        const interval = setInterval(() => {
-            attempts++;
-            console.log(`Start attempt ${attempts}`);
-            if (window.EJS_emulator && typeof window.EJS_emulator.start === 'function') {
-                window.EJS_emulator.start();
-                console.log('Game start called successfully');
-                clearInterval(interval);
-            } else if (attempts >= 20) {
-                console.error('Start failed after 40 seconds');
-                clearInterval(interval);
-            }
-        }, 2000);
-    };
-    s.onerror = () => emu.innerHTML = '<p style="color:red;">Loader failed</p>';
-    document.body.appendChild(s);
-}
+        preloadCores();
 
-function closeGame() {
-    document.getElementById('game-container').style.display = 'none';
-    document.getElementById('hub').style.display = 'block';
-    document.getElementById('emulator').innerHTML = '';
-}
-</script>
+        function loadGame(core, romPath, gameName) {
+            document.getElementById('hub').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+
+            const emu = document.getElementById('emulator');
+            const status = document.getElementById('status');
+            status.innerHTML = 'Loading ROM...';
+
+            if (!coresReady) {
+                status.innerHTML = 'Waiting for cores...';
+                setTimeout(() => loadGame(core, romPath, gameName), 2000);
+                return;
+            }
+
+            const romUrl = romPath; // Direct .gba path - no decode needed
+
+            window.EJS_player = '#emulator';
+            window.EJS_core = core;
+            window.EJS_pathtodata = '/brayh777/data/';
+            window.EJS_gameUrl = romUrl;
+            window.EJS_gameName = gameName;
+            window.EJS_startOnLoad = true;
+
+            window.EJS_mgbaData = coreDataUrl;
+            window.EJS_mgbaJs = coreJsUrl;
+            window.EJS_mgbaWasm = coreWasmUrl;
+
+            console.log('Starting emulator with ROM:', romUrl);
+
+            const s = document.createElement('script');
+            s.src = '/brayh777/data/loader.js';
+            s.onload = () => {
+                console.log('Loader loaded – forcing core registration');
+                status.innerHTML = 'Loader loaded - initializing core...';
+
+                let attempts = 0;
+                const interval = setInterval(() => {
+                    attempts++;
+                    console.log(`Start attempt ${attempts}`);
+                    status.innerHTML = `Start attempt ${attempts}...`;
+
+                    if (window.EJS_emulator && typeof window.EJS_emulator.start === 'function') {
+                        window.EJS_emulator.start();
+                        console.log('Game start called successfully');
+                        status.innerHTML = 'Game starting... (wait 30–60 seconds for first boot)';
+                        clearInterval(interval);
+                    } else if (attempts >= 20) {
+                        console.error('Start failed after 40 seconds');
+                        status.innerHTML = 'Start failed - check console for details';
+                        clearInterval(interval);
+                    }
+                }, 2000);
+            };
+            s.onerror = () => {
+                console.error('Loader failed');
+                status.innerHTML = 'Loader failed';
+            };
+            document.body.appendChild(s);
+        }
+
+        function closeGame() {
+            document.getElementById('game-container').style.display = 'none';
+            document.getElementById('hub').style.display = 'block';
+            document.getElementById('emulator').innerHTML = '';
+        }
+    </script>
 </body>
 </html>
