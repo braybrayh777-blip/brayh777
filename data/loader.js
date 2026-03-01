@@ -17,75 +17,43 @@
     function loadScript(file) {
         return new Promise(function(resolve) {
             let script = document.createElement("script");
-            script.src = function() {
-                if ("undefined" != typeof EJS_paths && typeof EJS_paths[file] === "string") {
-                    return EJS_paths[file];
-                } else if (file.endsWith("emulator.min.js")) {
-                    return scriptPath + file;
-                } else {
-                    return scriptPath + "src/" + file;
-                }
-            }();
+            script.src = scriptPath + (file.endsWith("emulator.min.js") ? file : "src/" + file);
             script.onload = resolve;
             script.onerror = () => {
-                filesmissing(file).then(e => resolve());
-            }
+                console.warn("Failed to load script: " + file + " - skipping");
+                resolve();
+            };
             document.head.appendChild(script);
-        })
+        });
     }
 
     function loadStyle(file) {
         return new Promise(function(resolve) {
             let css = document.createElement("link");
             css.rel = "stylesheet";
-            css.href = function() {
-                if ("undefined" != typeof EJS_paths && typeof EJS_paths[file] === "string") {
-                    return EJS_paths[file];
-                } else {
-                    return scriptPath + file;
-                }
-            }();
+            css.href = scriptPath + file;
             css.onload = resolve;
             css.onerror = () => {
-                filesmissing(file).then(e => resolve());
-            }
+                console.warn("Failed to load style: " + file + " - skipping");
+                resolve();
+            };
             document.head.appendChild(css);
-        })
+        });
     }
 
-    async function filesmissing(file) {
-        console.error("Failed to load " + file);
-        let minifiedFailed = file.includes(".min.") && !file.includes("socket");
-        console[minifiedFailed ? "warn" : "error"]("Failed to load " + file + " beacuse it's likly that the minified files are missing.\nTo fix this you have 3 options:\n1. You can download the zip from the latest release here: https://github.com/EmulatorJS/EmulatorJS/releases/latest - Stable\n2. You can download the zip from here: https://cdn.emulatorjs.org/latest/data/emulator.min.zip and extract it to the data/ folder. (easiest option) - Beta\n3. You can build the files by running `npm i && npm run build` in the data/minify folder. (hardest option) - Beta\nNote: you will probably need to do the same for the cores, extract them to the data/cores/ folder.");
-        if (minifiedFailed) {
-            console.log("Attempting to load non-minified files");
-            if (file === "emulator.min.js") {
-                for (let i = 0; i < scripts.length; i++) {
-                    await loadScript(scripts[i]);
-                }
-            } else {
-                await loadStyle("emulator.css");
-            }
-        }
-    }
+    // Load the main files
+    await loadScript("emulator.min.js");
+    await loadStyle("emulator.min.css");
 
-    if (("undefined" != typeof EJS_DEBUG_XX && true === EJS_DEBUG_XX)) {
-        for (let i = 0; i < scripts.length; i++) {
-            await loadScript(scripts[i]);
-        }
-        await loadStyle("emulator.css");
-    } else {
-        await loadScript("emulator.min.js");
-        await loadStyle("emulator.min.css");
-    }
+    // Skip compression and report fetches entirely
+    // We already have the Blobs injected, so no need for extract7z.js or reports
 
     const config = {};
     config.gameUrl = window.EJS_gameUrl;
     config.dataPath = scriptPath;
     config.system = window.EJS_core;
-    config.biosUrl = window.EJS_biosUrl;
     config.gameName = window.EJS_gameName;
-    config.color = window.EJS_color;
+    config.color = window.EJS_color || "#000000";
     config.adUrl = window.EJS_AdUrl;
     config.adMode = window.EJS_AdMode;
     config.adTimer = window.EJS_AdTimer;
@@ -95,9 +63,9 @@
     config.buttonOpts = window.EJS_Buttons;
     config.volume = window.EJS_volume;
     config.defaultControllers = window.EJS_defaultControls;
-    config.startOnLoad = window.EJS_startOnLoaded;
-    config.fullscreenOnLoad = window.EJS_fullscreenOnLoaded;
-    config.filePaths = window.EJS_paths;
+    config.startOnLoad = window.EJS_startOnLoaded || false;
+    config.fullscreenOnLoad = window.EJS_fullscreenOnLoaded || false;
+    config.filePaths = window.EJS_paths || {};
     config.loadState = window.EJS_loadStateURL;
     config.cacheLimit = window.EJS_CacheLimit;
     config.cheats = window.EJS_cheats;
@@ -123,67 +91,37 @@
     config.noAutoFocus = window.EJS_noAutoFocus;
     config.videoRotation = window.EJS_videoRotation;
     config.hideSettings = window.EJS_hideSettings;
-    config.shaders = Object.assign({}, window.EJS_SHADERS, window.EJS_shaders ? window.EJS_shaders : {});
+    config.shaders = Object.assign({}, window.EJS_SHADERS, window.EJS_shaders || {});
 
-    // --- CUSTOM OVERRIDE: SKIP BROKEN CORE REPORT & DATA FETCH ---
-    // Force use of pre-injected Blobs instead of fetching
+    // Force-use pre-injected Blobs (bypass any fetch attempts)
     if (window.EJS_mgbaLegacyData) config.coreData = window.EJS_mgbaLegacyData;
     if (window.EJS_mgbaLegacyJs) config.coreJs = window.EJS_mgbaLegacyJs;
     if (window.EJS_mgbaLegacyWasm) config.coreWasm = window.EJS_mgbaLegacyWasm;
 
-    // Disable report JSON fetch (prevents the 404 spam)
+    // Disable broken report fetch
     config.disableCoreReports = true;
 
-    let systemLang;
-    try {
-        systemLang = Intl.DateTimeFormat().resolvedOptions().locale;
-    } catch(e) {} //Ignore
-    if ((typeof window.EJS_language === "string" && window.EJS_language !== "en-US") || (systemLang && window.EJS_disableAutoLang !== false)) {
-        const language = window.EJS_language || systemLang;
-        try {
-            let path;
-            console.log("Loading language", language);
-            if ("undefined" != typeof EJS_paths && typeof EJS_paths[language] === "string") {
-                path = EJS_paths[language];
-            } else {
-                path = scriptPath + "localization/" + language + ".json";
-            }
-            config.language = language;
-            config.langJson = JSON.parse(await (await fetch(path)).text());
-        } catch(e) {
-            console.log("Missing language", language, "!!");
-            delete config.language;
-            delete config.langJson;
-        }
-    }
+    // Language fallback (skip fetch if not needed)
+    config.language = "en-US";
 
     window.EJS_emulator = new EmulatorJS(EJS_player, config);
     window.EJS_adBlocked = (url, del) => window.EJS_emulator.adBlocked(url, del);
 
+    // Force start after a short delay (bypasses timing issues)
+    setTimeout(() => {
+        if (window.EJS_emulator && typeof window.EJS_emulator.start === 'function') {
+            window.EJS_emulator.start();
+            console.log('Game forced to start');
+        } else {
+            console.warn('Start method not available yet');
+        }
+    }, 8000);
+
+    // Optional: Listen for ready/start events
     if (typeof window.EJS_ready === "function") {
         window.EJS_emulator.on("ready", window.EJS_ready);
     }
     if (typeof window.EJS_onGameStart === "function") {
         window.EJS_emulator.on("start", window.EJS_onGameStart);
     }
-    if (typeof window.EJS_onLoadState === "function") {
-        window.EJS_emulator.on("loadState", window.EJS_onLoadState);
-    }
-    if (typeof window.EJS_onSaveState === "function") {
-        window.EJS_emulator.on("saveState", window.EJS_onSaveState);
-    }
-    if (typeof window.EJS_onLoadSave === "function") {
-        window.EJS_emulator.on("loadSave", window.EJS_onLoadSave);
-    }
-    if (typeof window.EJS_onSaveSave === "function") {
-        window.EJS_emulator.on("saveSave", window.EJS_onSaveSave);
-    }
-
-    // --- FINAL FORCE START (after everything else loads) ---
-    setTimeout(() => {
-        if (window.EJS_emulator && typeof window.EJS_emulator.start === 'function') {
-            window.EJS_emulator.start();
-            console.log('Game forced to start');
-        }
-    }, 8000);
 })();
