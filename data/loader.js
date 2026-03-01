@@ -6,8 +6,8 @@
         "storage.js",
         "gamepad.js",
         "GameManager.js",
-        "socket.io.min.js",
-        "compression.js"
+        "socket.io.min.js"
+        // Removed "compression.js" - we don't need it (cores are pre-decoded)
     ];
 
     const folderPath = (path) => path.substring(0, path.length - path.split("/").pop().length);
@@ -45,15 +45,15 @@
     await loadScript("emulator.min.js");
     await loadStyle("emulator.min.css");
 
-    // Skip compression and report fetches entirely
-    // We already have the Blobs injected, so no need for extract7z.js or reports
+    // Skip report JSON and compression (we use pre-decoded Blobs)
+    console.log("Skipped broken report JSON and compression fetches");
 
     const config = {};
     config.gameUrl = window.EJS_gameUrl;
     config.dataPath = scriptPath;
     config.system = window.EJS_core;
     config.gameName = window.EJS_gameName;
-    config.color = window.EJS_color || "#000000";
+    config.color = window.EJS_color;
     config.adUrl = window.EJS_AdUrl;
     config.adMode = window.EJS_AdMode;
     config.adTimer = window.EJS_AdTimer;
@@ -63,9 +63,9 @@
     config.buttonOpts = window.EJS_Buttons;
     config.volume = window.EJS_volume;
     config.defaultControllers = window.EJS_defaultControls;
-    config.startOnLoad = window.EJS_startOnLoaded || false;
-    config.fullscreenOnLoad = window.EJS_fullscreenOnLoaded || false;
-    config.filePaths = window.EJS_paths || {};
+    config.startOnLoad = window.EJS_startOnLoaded;
+    config.fullscreenOnLoad = window.EJS_fullscreenOnLoaded;
+    config.filePaths = window.EJS_paths;
     config.loadState = window.EJS_loadStateURL;
     config.cacheLimit = window.EJS_CacheLimit;
     config.cheats = window.EJS_cheats;
@@ -93,7 +93,7 @@
     config.hideSettings = window.EJS_hideSettings;
     config.shaders = Object.assign({}, window.EJS_SHADERS, window.EJS_shaders || {});
 
-    // Force-use pre-injected Blobs (bypass any fetch attempts)
+    // Force use of your pre-decoded Blobs (bypass all fetches)
     if (window.EJS_mgbaLegacyData) config.coreData = window.EJS_mgbaLegacyData;
     if (window.EJS_mgbaLegacyJs) config.coreJs = window.EJS_mgbaLegacyJs;
     if (window.EJS_mgbaLegacyWasm) config.coreWasm = window.EJS_mgbaLegacyWasm;
@@ -101,23 +101,19 @@
     // Disable broken report fetch
     config.disableCoreReports = true;
 
-    // Language fallback (skip fetch if not needed)
-    config.language = "en-US";
-
     window.EJS_emulator = new EmulatorJS(EJS_player, config);
-    window.EJS_adBlocked = (url, del) => window.EJS_emulator.adBlocked(url, del);
 
-    // Force start after a short delay (bypasses timing issues)
+    // Force start after a short delay (bypasses library bug)
     setTimeout(() => {
         if (window.EJS_emulator && typeof window.EJS_emulator.start === 'function') {
             window.EJS_emulator.start();
-            console.log('Game forced to start');
+            console.log('Game forced to start successfully');
         } else {
             console.warn('Start method not available yet');
         }
     }, 8000);
 
-    // Optional: Listen for ready/start events
+    // Optional event listeners
     if (typeof window.EJS_ready === "function") {
         window.EJS_emulator.on("ready", window.EJS_ready);
     }
