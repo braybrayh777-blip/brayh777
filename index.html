@@ -145,6 +145,42 @@
             document.getElementById('hub').style.display = 'block';
             document.getElementById('emulator').innerHTML = '';
         }
+        // Final override for emulator.min.js - force core init with Blobs
+setTimeout(() => {
+    if (window.EmulatorJS && window.EmulatorJS.prototype) {
+        console.log('Applying emulator.min.js override');
+
+        // Override the core loading function to use Blobs instantly
+        if (window.EmulatorJS.prototype.downloadGameCore) {
+            window.EmulatorJS.prototype.downloadGameCore = function() {
+                console.log('Forced Blob core load - skipping fetches');
+                this.coreDataBlob = window.EJS_mgbaData || window.EJS_mgbaLegacyData;
+                this.coreJsBlob = window.EJS_mgbaJs || window.EJS_mgbaLegacyJs;
+                this.coreWasmBlob = window.EJS_mgbaWasm || window.EJS_mgbaLegacyWasm;
+
+                // Skip any remaining report or compression checks
+                this.coreReport = null;
+                this.coreCompression = null;
+
+                // Force start
+                if (typeof this.start === 'function') {
+                    this.start();
+                    console.log('Forced core start from override');
+                } else {
+                    console.warn('Start method still missing after override');
+                }
+            };
+        }
+
+        // Force call start if it's now available
+        if (window.EJS_emulator && typeof window.EJS_emulator.start === 'function') {
+            window.EJS_emulator.start();
+            console.log('Game start forced after override');
+        }
+    } else {
+        console.warn('EmulatorJS object not found - override failed');
+    }
+}, 10000); // Run 10 seconds after loader (gives time for init)
     </script>
 </body>
 </html>
