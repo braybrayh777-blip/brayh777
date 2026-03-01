@@ -112,55 +112,27 @@
             const s = document.createElement('script');
             s.src = '/brayh777/data/loader.js';
             s.onload = () => {
-                console.log('Loader loaded – forcing core JS registration');
+                console.log('Loader loaded – forcing core registration');
                 status.innerHTML = 'Loader loaded - initializing core...';
 
-                if (coreJsUrl) {
-                    fetch(coreJsUrl)
-                        .then(res => res.blob())
-                        .then(blob => {
-                            const ds = new DecompressionStream("gzip");
-                            const decompressedStream = blob.stream().pipeThrough(ds);
-                            return new Response(decompressedStream).text();
-                        })
-                        .then(coreJsCode => {
-                            console.log('Core JS decompressed, length: ' + coreJsCode.length);
-                            console.log('Core JS first 100 chars: ' + coreJsCode.substring(0, 100));
-                            try {
-                                eval(coreJsCode);
-                                console.log('Core JS eval executed successfully');
-                                status.innerHTML = 'Core registered - starting game...';
-                            } catch (e) {
-                                console.error('Eval failed:', e);
-                                status.innerHTML = 'Core eval failed';
-                            }
+                // Aggressive retry loop for .start()
+                let attempts = 0;
+                const interval = setInterval(() => {
+                    attempts++;
+                    console.log(`Start attempt ${attempts}`);
+                    status.innerHTML = `Start attempt ${attempts}...`;
 
-                            // Aggressive retry loop for .start()
-                            let attempts = 0;
-                            const interval = setInterval(() => {
-                                attempts++;
-                                console.log(`Start attempt ${attempts}`);
-                                status.innerHTML = `Start attempt ${attempts}...`;
-                                if (window.EJS_emulator && typeof window.EJS_emulator.start === 'function') {
-                                    window.EJS_emulator.start();
-                                    console.log('Game start called successfully');
-                                    status.innerHTML = 'Game starting... (wait 30–60 seconds for first boot)';
-                                    clearInterval(interval);
-                                } else if (attempts >= 20) {
-                                    console.error('Start failed after 40 seconds');
-                                    status.innerHTML = 'Start failed - check console for details';
-                                    clearInterval(interval);
-                                }
-                            }, 2000); // Check every 2 seconds, up to 40 seconds
-                        })
-                        .catch(err => {
-                            console.error('Core JS decompression failed:', err);
-                            status.innerHTML = 'Core decompression failed';
-                        });
-                } else {
-                    console.error('No core JS Blob URL');
-                    status.innerHTML = 'No core JS';
-                }
+                    if (window.EJS_emulator && typeof window.EJS_emulator.start === 'function') {
+                        window.EJS_emulator.start();
+                        console.log('Game start called successfully');
+                        status.innerHTML = 'Game starting... (wait 30–60 seconds for first boot)';
+                        clearInterval(interval);
+                    } else if (attempts >= 20) {
+                        console.error('Start failed after 40 seconds');
+                        status.innerHTML = 'Start failed - check console for details';
+                        clearInterval(interval);
+                    }
+                }, 2000); // Check every 2 seconds, up to 40 seconds
             };
             s.onerror = () => {
                 console.error('Loader failed');
