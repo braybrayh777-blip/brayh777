@@ -13,7 +13,7 @@
     const folderPath = (path) => path.substring(0, path.length - path.split("/").pop().length);
     let scriptPath = (typeof window.EJS_pathtodata === "string") ? window.EJS_pathtodata : folderPath((new URL(document.currentScript.src)).pathname);
     if (!scriptPath.endsWith("/")) scriptPath += "/";
-    //console.log(scriptPath);
+
     function loadScript(file) {
         return new Promise(function(resolve) {
             let script = document.createElement("script");
@@ -78,6 +78,7 @@
         await loadScript("emulator.min.js");
         await loadStyle("emulator.min.css");
     }
+
     const config = {};
     config.gameUrl = window.EJS_gameUrl;
     config.dataPath = scriptPath;
@@ -124,6 +125,15 @@
     config.hideSettings = window.EJS_hideSettings;
     config.shaders = Object.assign({}, window.EJS_SHADERS, window.EJS_shaders ? window.EJS_shaders : {});
 
+    // --- CUSTOM OVERRIDE: SKIP BROKEN CORE REPORT & DATA FETCH ---
+    // Force use of pre-injected Blobs instead of fetching
+    if (window.EJS_mgbaLegacyData) config.coreData = window.EJS_mgbaLegacyData;
+    if (window.EJS_mgbaLegacyJs) config.coreJs = window.EJS_mgbaLegacyJs;
+    if (window.EJS_mgbaLegacyWasm) config.coreWasm = window.EJS_mgbaLegacyWasm;
+
+    // Disable report JSON fetch (prevents the 404 spam)
+    config.disableCoreReports = true;
+
     let systemLang;
     try {
         systemLang = Intl.DateTimeFormat().resolvedOptions().locale;
@@ -149,6 +159,7 @@
 
     window.EJS_emulator = new EmulatorJS(EJS_player, config);
     window.EJS_adBlocked = (url, del) => window.EJS_emulator.adBlocked(url, del);
+
     if (typeof window.EJS_ready === "function") {
         window.EJS_emulator.on("ready", window.EJS_ready);
     }
@@ -167,4 +178,12 @@
     if (typeof window.EJS_onSaveSave === "function") {
         window.EJS_emulator.on("saveSave", window.EJS_onSaveSave);
     }
+
+    // --- FINAL FORCE START (after everything else loads) ---
+    setTimeout(() => {
+        if (window.EJS_emulator && typeof window.EJS_emulator.start === 'function') {
+            window.EJS_emulator.start();
+            console.log('Game forced to start');
+        }
+    }, 8000);
 })();
