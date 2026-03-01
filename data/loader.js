@@ -86,7 +86,7 @@
     config.dontExtractBIOS = window.EJS_dontExtractBIOS;
     config.disableDatabases = window.EJS_disableDatabases;
     config.disableLocalStorage = window.EJS_disableLocalStorage;
-    config.forceLegacyCores = true;  // Added: force legacy mode for your blobs
+    config.forceLegacyCores = true;
     config.noAutoFocus = window.EJS_noAutoFocus;
     config.videoRotation = window.EJS_videoRotation;
     config.hideSettings = window.EJS_hideSettings;
@@ -100,16 +100,38 @@
     // Disable broken report fetch
     config.disableCoreReports = true;
 
+    console.log('Config coreData passed?:', !!config.coreData);
+    console.log('Config coreJs passed?:', !!config.coreJs);
+    console.log('Config coreWasm passed?:', !!config.coreWasm);
+
     try {
         window.EJS_emulator = new EmulatorJS(EJS_player, config);
         console.log('EmulatorJS instantiated successfully');
         console.log('EJS_emulator keys:', Object.keys(window.EJS_emulator || {}));
         console.log('Has start after creation?:', typeof window.EJS_emulator?.start === 'function');
+
+        // Add event listeners for debugging
+        window.EJS_emulator.on('coreLoaded', () => {
+            console.log('Core loaded event fired!');
+        });
+        window.EJS_emulator.on('error', (err) => {
+            console.error('EmulatorJS error event:', err);
+        });
+
+        // Try manual trigger if methods exist
+        console.log('Attempting manual core/game load if needed...');
+        if (typeof window.EJS_emulator.loadCore === 'function') {
+            window.EJS_emulator.loadCore(window.EJS_core);
+            console.log('Called loadCore()');
+        } else if (typeof window.EJS_emulator.loadGame === 'function') {
+            window.EJS_emulator.loadGame(window.EJS_gameUrl);
+            console.log('Called loadGame()');
+        }
     } catch (err) {
         console.error('EmulatorJS instantiation failed:', err);
     }
 
-    // Polling for start (better than fixed timeout)
+    // Polling for start
     let startPoll = setInterval(() => {
         if (window.EJS_emulator && typeof window.EJS_emulator.start === 'function') {
             window.EJS_emulator.start();
