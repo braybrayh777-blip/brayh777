@@ -77,7 +77,7 @@
     config.backgroundBlur = window.EJS_backgroundBlur;
     config.backgroundColor = window.EJS_backgroundColor;
     config.controlScheme = window.EJS_controlScheme;
-    config.threads = false;  // Disabled to avoid SharedArrayBuffer error on GH Pages
+    config.threads = false;
     config.disableCue = window.EJS_disableCue;
     config.startBtnName = window.EJS_startButtonName;
     config.softLoad = window.EJS_softLoad;
@@ -86,7 +86,7 @@
     config.dontExtractBIOS = window.EJS_dontExtractBIOS;
     config.disableDatabases = window.EJS_disableDatabases;
     config.disableLocalStorage = window.EJS_disableLocalStorage;
-    config.forceLegacyCores = true;  // Enable for non-threaded cores
+    config.forceLegacyCores = true;
     config.noAutoFocus = window.EJS_noAutoFocus;
     config.videoRotation = window.EJS_videoRotation;
     config.hideSettings = window.EJS_hideSettings;
