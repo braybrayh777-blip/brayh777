@@ -38,33 +38,30 @@
     </div>
 
 <script>
-    // Comment out preloadCores() - use CDN for core
-    // async function preloadCores() { ... } // No need for local Blobs anymore
-
     function loadGame(core, romPath, gameName) {
         document.getElementById('hub').style.display = 'none';
         document.getElementById('game-container').style.display = 'block';
         const status = document.getElementById('status');
-        status.innerHTML = 'Loading emulator & ROM... (10-60s first time)';
+        status.innerHTML = 'Loading emulator & ROM... (10–60 seconds first time)';
 
         window.EJS_player = '#emulator';
-        window.EJS_core = core;
-        window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';  // Official CDN for cores
+        window.EJS_core = core;  // 'mgba' for GBA
+        window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
         window.EJS_gameUrl = romPath;
         window.EJS_gameName = gameName;
         window.EJS_startOnLoaded = true;
-        window.EJS_threads = false;  // Safe for GH Pages
+        window.EJS_threads = false;  // Safe for GitHub Pages
 
         console.log('Starting emulator with ROM:', romPath);
 
         const s = document.createElement('script');
-        s.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';  // CDN loader too
+        s.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
         s.onload = () => {
-            console.log('Loader loaded from CDN – starting core');
+            console.log('CDN Loader loaded – emulator initializing');
             status.innerHTML = 'Emulator ready - booting game...';
         };
         s.onerror = () => {
-            console.error('CDN loader failed');
+            console.error('Failed to load CDN loader');
             status.innerHTML = 'Failed to load emulator - check console';
         };
         document.body.appendChild(s);
