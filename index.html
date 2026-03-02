@@ -43,7 +43,7 @@
 
     async function preloadCores() {
         const files = [
-            { key: 'data', path: '/brayh777/data/cores/mgba-thread-wasm-data.txt' }  // <-- Update filename if different
+            { key: 'data', path: '/brayh777/data/cores/mgba-legacy-wasm-data.txt' }  // Change to mgba-thread-wasm-data.txt if using threaded
         ];
         for (const file of files) {
             try {
@@ -87,7 +87,7 @@
         window.EJS_gameUrl    = romPath;
         window.EJS_gameName   = gameName;
         window.EJS_startOnLoaded = true;
-        window.EJS_threads = true;  // Force threading
+        window.EJS_threads = true;
 
         window.EJS_mgbaLegacyData = coreDataUrl;
 
