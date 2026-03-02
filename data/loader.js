@@ -16,9 +16,12 @@
         return new Promise(function(resolve) {
             let script = document.createElement("script");
             script.src = scriptPath + (file.endsWith("emulator.min.js") ? file : "src/" + file);
-            script.onload = resolve;
+            script.onload = () => {
+                console.log(`Loaded script: ${file}`);
+                resolve();
+            };
             script.onerror = () => {
-                console.warn("Failed to load script: " + file + " - skipping");
+                console.warn(`Failed to load script: ${file} - skipping`);
                 resolve();
             };
             document.head.appendChild(script);
@@ -74,7 +77,7 @@
     config.backgroundBlur = window.EJS_backgroundBlur;
     config.backgroundColor = window.EJS_backgroundColor;
     config.controlScheme = window.EJS_controlScheme;
-    config.threads = window.EJS_threads || true;  // Force threading
+    config.threads = window.EJS_threads || true;
     config.disableCue = window.EJS_disableCue;
     config.startBtnName = window.EJS_startButtonName;
     config.softLoad = window.EJS_softLoad;
@@ -83,7 +86,7 @@
     config.dontExtractBIOS = window.EJS_dontExtractBIOS;
     config.disableDatabases = window.EJS_disableDatabases;
     config.disableLocalStorage = window.EJS_disableLocalStorage;
-    config.forceLegacyCores = false;  // Disable legacy for threaded
+    config.forceLegacyCores = false;
     config.noAutoFocus = window.EJS_noAutoFocus;
     config.videoRotation = window.EJS_videoRotation;
     config.hideSettings = window.EJS_hideSettings;
@@ -93,6 +96,7 @@
 
     config.disableCoreReports = true;
 
+    console.log('Full config object before instantiation:', config);
     console.log('Config coreData passed?:', !!config.coreData);
     console.log('Threads enabled in config?:', config.threads);
 
@@ -103,7 +107,7 @@
         console.log('Has start after creation?:', typeof window.EJS_emulator?.start === 'function');
 
         window.EJS_emulator.on('coreLoaded', () => {
-            console.log('Core loaded event fired! Core should be ready.');
+            console.log('Core loaded event fired!');
         });
         window.EJS_emulator.on('error', (err) => {
             console.error('EmulatorJS core error event:', err);
@@ -120,7 +124,7 @@
             window.EJS_emulator.loadGame(window.EJS_gameUrl);
             console.log('Called loadGame()');
         } else {
-            console.log('No loadCore or loadGame method found on instance.');
+            console.log('No loadCore or loadGame method found.');
         }
     } catch (err) {
         console.error('EmulatorJS instantiation failed:', err);
