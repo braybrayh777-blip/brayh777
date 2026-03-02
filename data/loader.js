@@ -106,7 +106,6 @@
         console.log('EJS_emulator keys after instantiation:', Object.keys(window.EJS_emulator || {}));
         console.log('Has start after creation?:', typeof window.EJS_emulator?.start === 'function');
 
-        // Add listeners
         window.EJS_emulator.on('coreLoaded', () => {
             console.log('Core loaded event fired! Core is ready.');
         });
@@ -117,19 +116,32 @@
             console.log('Emulator ready event fired!');
         });
 
-        // Try to force core load
-        console.log('Attempting manual core load...');
-        if (window.EJS_emulator.loadCore) {
+        // Force core load after ready
+        window.EJS_emulator.on('ready', () => {
+            console.log('Ready event - forcing core load attempt...');
+            if (typeof window.EJS_emulator.loadCore === 'function') {
+                window.EJS_emulator.loadCore(window.EJS_core);
+                console.log('Called loadCore() on ready');
+            } else if (typeof window.EJS_emulator.loadGame === 'function') {
+                window.EJS_emulator.loadGame(window.EJS_gameUrl);
+                console.log('Called loadGame() on ready');
+            } else {
+                console.log('No load method found - trying start() directly');
+                if (typeof window.EJS_emulator.start === 'function') {
+                    window.EJS_emulator.start();
+                    console.log('Called start() directly on ready');
+                }
+            }
+        });
+
+        // Initial attempt
+        console.log('Attempting initial core/game load...');
+        if (typeof window.EJS_emulator.loadCore === 'function') {
             window.EJS_emulator.loadCore(window.EJS_core);
-            console.log('Called loadCore()');
-        } else if (window.EJS_emulator.loadGame) {
+            console.log('Called loadCore() initial');
+        } else if (typeof window.EJS_emulator.loadGame === 'function') {
             window.EJS_emulator.loadGame(window.EJS_gameUrl);
-            console.log('Called loadGame()');
-        } else if (window.EJS_emulator.start) {
-            window.EJS_emulator.start();
-            console.log('Called start() directly');
-        } else {
-            console.log('No loadCore, loadGame, or start method found.');
+            console.log('Called loadGame() initial');
         }
     } catch (err) {
         console.error('EmulatorJS instantiation failed:', err);
