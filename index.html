@@ -43,7 +43,7 @@
 
     async function preloadCores() {
         const files = [
-            { key: 'data', path: '/brayh777/data/cores/mgba-wasm-data.txt' }  // Non-threaded variant
+            { key: 'data', path: '/brayh777/data/cores/mgba-wasm-data.txt' } // or mgba-legacy-wasm-data.txt
         ];
         for (const file of files) {
             try {
@@ -87,7 +87,7 @@
         window.EJS_gameUrl    = romPath;
         window.EJS_gameName   = gameName;
         window.EJS_startOnLoaded = true;
-        window.EJS_threads = false;  // Disabled to avoid SharedArrayBuffer error on GH Pages
+        window.EJS_threads = false;
 
         window.EJS_mgbaLegacyData = coreDataUrl;
 
