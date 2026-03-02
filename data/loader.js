@@ -1,4 +1,4 @@
-(async function() {
+(async function () {
     const scripts = [
         "emulator.js",
         "nipplejs.js",
@@ -8,36 +8,51 @@
         "GameManager.js",
         "socket.io.min.js"
     ];
-    const folderPath = (path) => path.substring(0, path.length - path.split("/").pop().length);
-    let scriptPath = (typeof window.EJS_pathtodata === "string") ? window.EJS_pathtodata : folderPath((new URL(document.currentScript.src)).pathname);
+
+    const folderPath = (path) =>
+        path.substring(0, path.length - path.split("/").pop().length);
+
+    let scriptPath =
+        typeof window.EJS_pathtodata === "string"
+            ? window.EJS_pathtodata
+            : folderPath(new URL(document.currentScript.src).pathname);
+
     if (!scriptPath.endsWith("/")) scriptPath += "/";
 
     function loadScript(file) {
-        return new Promise(function(resolve) {
+        return new Promise(function (resolve) {
             let script = document.createElement("script");
-            script.src = scriptPath + (file.endsWith("emulator.min.js") ? file : "src/" + file);
+            script.src =
+                scriptPath +
+                (file.endsWith("emulator.min.js") ? file : "src/" + file);
+
             script.onload = () => {
                 console.log(`Loaded script: ${file}`);
                 resolve();
             };
+
             script.onerror = () => {
                 console.warn(`Failed to load script: ${file} - skipping`);
                 resolve();
             };
+
             document.head.appendChild(script);
         });
     }
 
     function loadStyle(file) {
-        return new Promise(function(resolve) {
+        return new Promise(function (resolve) {
             let css = document.createElement("link");
             css.rel = "stylesheet";
             css.href = scriptPath + file;
+
             css.onload = resolve;
+
             css.onerror = () => {
                 console.warn("Failed to load style: " + file + " - skipping");
                 resolve();
             };
+
             document.head.appendChild(css);
         });
     }
@@ -90,65 +105,87 @@
     config.noAutoFocus = window.EJS_noAutoFocus;
     config.videoRotation = window.EJS_videoRotation;
     config.hideSettings = window.EJS_hideSettings;
-    config.shaders = Object.assign({}, window.EJS_SHADERS, window.EJS_shaders || {});
+    config.shaders = Object.assign(
+        {},
+        window.EJS_SHADERS,
+        window.EJS_shaders || {}
+    );
 
-    if (window.EJS_mgbaLegacyData) config.coreData = window.EJS_mgbaLegacyData;
+    if (window.EJS_mgbaLegacyData)
+        config.coreData = window.EJS_mgbaLegacyData;
 
     config.disableCoreReports = true;
 
-    console.log('Full config object before instantiation:', config);
-    console.log('Config coreData passed?:', !!config.coreData);
-    console.log('Threads enabled in config?:', config.threads);
+    console.log("Full config object before instantiation:", config);
+    console.log("Config coreData passed?:", !!config.coreData);
+    console.log("Threads enabled in config?:", config.threads);
 
     try {
         window.EJS_emulator = new EmulatorJS(EJS_player, config);
-        console.log('EmulatorJS instantiated successfully');
-        console.log('EJS_emulator keys after instantiation:', Object.keys(window.EJS_emulator || {}));
-        console.log('Has start after creation?:', typeof window.EJS_emulator?.start === 'function');
 
-        window.EJS_emulator.on('coreLoaded', () => {
-            console.log('Core loaded event fired!');
-        });
-        window.EJS_emulator.on('error', (err) => {
-            console.error('EmulatorJS core error event:', err);
-        });
-        window.EJS_emulator.on('ready', () => {
-            console.log('Emulator ready event fired!');
+        console.log("EmulatorJS instantiated successfully");
+        console.log(
+            "EJS_emulator keys after instantiation:",
+            Object.keys(window.EJS_emulator || {})
+        );
+        console.log(
+            "Has start after creation?:",
+            typeof window.EJS_emulator?.start === "function"
+        );
+
+        window.EJS_emulator.on("coreLoaded", () => {
+            console.log("Core loaded event fired!");
         });
 
-        console.log('Attempting manual core/game load if needed...');
-        if (typeof window.EJS_emulator.loadCore === 'function') {
+        window.EJS_emulator.on("error", (err) => {
+            console.error("EmulatorJS core error event:", err);
+        });
+
+        window.EJS_emulator.on("ready", () => {
+            console.log("Emulator ready event fired!");
+        });
+
+        console.log("Attempting manual core/game load if needed...");
+
+        if (typeof window.EJS_emulator.loadCore === "function") {
             window.EJS_emulator.loadCore(window.EJS_core);
-            console.log('Called loadCore()');
-        } else if (typeof window.EJS_emulator.loadGame === 'function') {
+            console.log("Called loadCore()");
+        } else if (typeof window.EJS_emulator.loadGame === "function") {
             window.EJS_emulator.loadGame(window.EJS_gameUrl);
-            console.log('Called loadGame()');
+            console.log("Called loadGame()");
         } else {
-            console.log('No loadCore or loadGame method found.');
+            console.log("No loadCore or loadGame method found.");
         }
     } catch (err) {
-        console.error('EmulatorJS instantiation failed:', err);
+        console.error("EmulatorJS instantiation failed:", err);
     }
 
     let startPoll = setInterval(() => {
-        if (window.EJS_emulator && typeof window.EJS_emulator.start === 'function') {
+        if (
+            window.EJS_emulator &&
+            typeof window.EJS_emulator.start === "function"
+        ) {
             window.EJS_emulator.start();
-            console.log('Game forced to start successfully');
+            console.log("Game forced to start successfully");
             clearInterval(startPoll);
         } else {
-            console.warn('Start method not available yet - polling');
-            console.log('Current keys during polling:', Object.keys(window.EJS_emulator || {}));
+            console.warn("Start method not available yet - polling");
+            console.log(
+                "Current keys during polling:",
+                Object.keys(window.EJS_emulator || {})
+            );
         }
     }, 1000);
 
     setTimeout(() => {
         clearInterval(startPoll);
-        console.error('Start polling timed out after 30s');
+        console.error("Start polling timed out after 30s");
     }, 30000);
 
     if (typeof window.EJS_ready === "function") {
         window.EJS_emulator.on("ready", window.EJS_ready);
     }
+
     if (typeof window.EJS_onGameStart === "function") {
         window.EJS_emulator.on("start", window.EJS_onGameStart);
     }
