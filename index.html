@@ -38,70 +38,34 @@
     </div>
 
 <script>
-    let coresReady = false;
-    let coreDataUrl = null;
-
-    async function preloadCores() {
-        const files = [
-            { key: 'data', path: '/brayh777/data/cores/mgba-wasm-data.txt' } // or mgba-legacy-wasm-data.txt
-        ];
-        for (const file of files) {
-            try {
-                const res = await fetch(file.path);
-                if (!res.ok) {
-                    console.error(`Failed to fetch ${file.path}: ${res.status} ${res.statusText}`);
-                    continue;
-                }
-                const base64 = await res.text();
-                const binary = atob(base64);
-                const bytes = new Uint8Array(binary.length);
-                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-                const blob = new Blob([bytes], { type: 'application/octet-stream' });
-                const url = URL.createObjectURL(blob);
-                if (file.key === 'data') coreDataUrl = url;
-                console.log(`Core ${file.key} decoded OK`);
-            } catch (e) {
-                console.error(`Core preload failed for ${file.path}`, e);
-            }
-        }
-        coresReady = true;
-        console.log('Cores preloaded');
-    }
-    preloadCores();
+    // Comment out preloadCores() - use CDN for core
+    // async function preloadCores() { ... } // No need for local Blobs anymore
 
     function loadGame(core, romPath, gameName) {
         document.getElementById('hub').style.display = 'none';
         document.getElementById('game-container').style.display = 'block';
         const status = document.getElementById('status');
-        status.innerHTML = 'Loading ROM... (may take 30-90s for first boot)';
+        status.innerHTML = 'Loading emulator & ROM... (10-60s first time)';
 
-        if (!coresReady) {
-            status.innerHTML = 'Waiting for cores...';
-            setTimeout(() => loadGame(core, romPath, gameName), 1000);
-            return;
-        }
-
-        window.EJS_player     = '#emulator';
-        window.EJS_core       = core;
-        window.EJS_pathtodata = '/brayh777/data/';
-        window.EJS_gameUrl    = romPath;
-        window.EJS_gameName   = gameName;
+        window.EJS_player = '#emulator';
+        window.EJS_core = core;
+        window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';  // Official CDN for cores
+        window.EJS_gameUrl = romPath;
+        window.EJS_gameName = gameName;
         window.EJS_startOnLoaded = true;
-        window.EJS_threads = false;
-
-        window.EJS_mgbaLegacyData = coreDataUrl;
+        window.EJS_threads = false;  // Safe for GH Pages
 
         console.log('Starting emulator with ROM:', romPath);
 
         const s = document.createElement('script');
-        s.src = '/brayh777/data/loader.js';
+        s.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';  // CDN loader too
         s.onload = () => {
-            console.log('Loader loaded – forcing core registration');
-            status.innerHTML = 'Initializing core...';
+            console.log('Loader loaded from CDN – starting core');
+            status.innerHTML = 'Emulator ready - booting game...';
         };
         s.onerror = () => {
-            console.error('Loader failed');
-            status.innerHTML = 'Loader failed';
+            console.error('CDN loader failed');
+            status.innerHTML = 'Failed to load emulator - check console';
         };
         document.body.appendChild(s);
     }
