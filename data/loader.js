@@ -1,4 +1,4 @@
-(async function() {
+((async function() {
     const scripts = [
         "emulator.js",
         "nipplejs.js",
@@ -77,7 +77,7 @@
     config.backgroundBlur = window.EJS_backgroundBlur;
     config.backgroundColor = window.EJS_backgroundColor;
     config.controlScheme = window.EJS_controlScheme;
-    config.threads = window.EJS_threads || true;
+    config.threads = false;  // Disabled for GitHub Pages (no COOP/COEP headers)
     config.disableCue = window.EJS_disableCue;
     config.startBtnName = window.EJS_startButtonName;
     config.softLoad = window.EJS_softLoad;
@@ -86,7 +86,7 @@
     config.dontExtractBIOS = window.EJS_dontExtractBIOS;
     config.disableDatabases = window.EJS_disableDatabases;
     config.disableLocalStorage = window.EJS_disableLocalStorage;
-    config.forceLegacyCores = false;
+    config.forceLegacyCores = true;  // Enable for non-threaded
     config.noAutoFocus = window.EJS_noAutoFocus;
     config.videoRotation = window.EJS_videoRotation;
     config.hideSettings = window.EJS_hideSettings;
